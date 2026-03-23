@@ -1,0 +1,758 @@
+%PDF-1.4
+%
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 2379 >>
+stream
+BT
+/F1 10 Tf
+50 792 Td
+12 TL
+(CTF Writeups Bundle) Tj
+T*
+(Generated: 2026-03-23 13:20:33) Tj
+T*
+() Tj
+T*
+(==============================================================================) Tj
+T*
+(crypto-reused-iv.md) Tj
+T*
+(==============================================================================) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(# Crypto: Reused Nonce \(AES-CTR\)) Tj
+T*
+() Tj
+T*
+(## Summary) Tj
+T*
+(Recover the flag by exploiting AES-CTR nonce reuse, which reuses the same keystream for every) Tj
+T*
+(encryption.) Tj
+T*
+() Tj
+T*
+(## Challenge) Tj
+T*
+(- The server encrypts user-provided plaintext via POST /encrypt.) Tj
+T*
+(- It also returns a target ciphertext via GET /target \(the flag encrypted\).) Tj
+T*
+(- Vulnerability: AES-CTR is used with a fixed nonce \(FIXED_NONCE\) for all requests.) Tj
+T*
+() Tj
+T*
+(## Solution) Tj
+T*
+(In CTR mode:) Tj
+T*
+(- C = P XOR keystream) Tj
+T*
+() Tj
+T*
+(If the same nonce is reused, the keystream repeats. If we can ask the server to encrypt a known) Tj
+T*
+(plaintext \(like all-zero bytes\), we directly learn the keystream:) Tj
+T*
+(- encrypt\(00..00\) = keystream) Tj
+T*
+() Tj
+T*
+(Then decrypt:) Tj
+T*
+(- P = C XOR keystream) Tj
+T*
+() Tj
+T*
+(## Reproduction) Tj
+T*
+(1. Run the challenge: python challenges/crypto-reused-iv/server.py \(listens on) Tj
+T*
+(http://localhost:5003\).) Tj
+T*
+(2. Run the exploit: python exploits/exploit_reused_iv.py.) Tj
+T*
+() Tj
+T*
+(## Flag) Tj
+T*
+(flag{never_reuse_iv}) Tj
+T*
+() Tj
+T*
+(## Mitigation) Tj
+T*
+(- Never reuse a CTR nonce for the same key.) Tj
+T*
+(- Prefer AEAD constructions \(AES-GCM or ChaCha20-Poly1305\) with correct nonce handling.) Tj
+T*
+() Tj
+T*
+(---) Tj
+T*
+(Ethics note: this writeup targets the intentionally vulnerable code in this repository only. Do) Tj
+T*
+(not use these techniques on systems you do not own or have explicit permission to test.) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(==============================================================================) Tj
+T*
+(forensics-hidden-pdf.md) Tj
+T*
+(==============================================================================) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(# Forensics: Hidden in PDF) Tj
+T*
+() Tj
+T*
+(## Summary) Tj
+T*
+(Extract an embedded attachment \(flag.txt\) from a PDF using either standard CLI tools or a) Tj
+T*
+(Python script.) Tj
+T*
+() Tj
+T*
+(## Challenge) Tj
+T*
+(- File: challenges/forensics-hidden-pdf/challenge.pdf) Tj
+T*
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 2643 >>
+stream
+BT
+/F1 10 Tf
+50 792 Td
+12 TL
+(- The flag is embedded as an attachment in the PDF name tree \(/EmbeddedFiles\).) Tj
+T*
+() Tj
+T*
+(## Solution) Tj
+T*
+(### Approach) Tj
+T*
+(1. Inspect the PDF for embedded files.) Tj
+T*
+(2. Extract attachments and look for a flag string.) Tj
+T*
+() Tj
+T*
+(### Tooling options) Tj
+T*
+(- Poppler tools \(Linux/macOS\): pdfdetach -list and pdfdetach -saveall) Tj
+T*
+(- Included Python extractor: exploits/extract_pdf_flag.py) Tj
+T*
+() Tj
+T*
+(## Reproduction) Tj
+T*
+(1. \(Optional\) Regenerate the PDF: python challenges/forensics-hidden-pdf/create_challenge.py) Tj
+T*
+(2. Extract attachments: python exploits/extract_pdf_flag.py) Tj
+T*
+(challenges/forensics-hidden-pdf/challenge.pdf) Tj
+T*
+() Tj
+T*
+(## Flag) Tj
+T*
+(flag{pdf_attachment_found}) Tj
+T*
+() Tj
+T*
+(## Mitigation) Tj
+T*
+(- Strip attachments from untrusted PDFs before redistribution.) Tj
+T*
+(- Validate/sanitize PDFs in ingestion pipelines.) Tj
+T*
+() Tj
+T*
+(---) Tj
+T*
+(Ethics note: this writeup targets the intentionally vulnerable code in this repository only. Do) Tj
+T*
+(not use these techniques on systems you do not own or have explicit permission to test.) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(==============================================================================) Tj
+T*
+(pwn-off-by-one-rop.md) Tj
+T*
+(==============================================================================) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(# Pwn: Off-by-One ROP) Tj
+T*
+() Tj
+T*
+(## Summary) Tj
+T*
+(Abuse a 1-byte overflow to corrupt the least significant byte \(LSB\) of saved RBP, then pivot) Tj
+T*
+(the stack into attacker-controlled data and return into win\(\).) Tj
+T*
+() Tj
+T*
+(## Challenge) Tj
+T*
+(- Bug: read\(STDIN, buf, 129\) reads up to 129 bytes into a 128-byte buffer.) Tj
+T*
+(- Impact: byte index 128 overwrites the first byte of saved RBP \(on x86-64, little-endian\).) Tj
+T*
+(- Mitigations: stack protector is disabled here \(-fno-stack-protector\) to keep focus on the) Tj
+T*
+(pivot.) Tj
+T*
+() Tj
+T*
+(## Solution) Tj
+T*
+(### Why the LSB matters) Tj
+T*
+(If we can nudge saved RBP to point into our buffer, the function epilogue \(leave; ret\)) Tj
+T*
+(effectively does:) Tj
+T*
+(- leave: RSP = RBP; RBP = [RSP]) Tj
+T*
+(- ret: RIP = [RSP+8]) Tj
+T*
+() Tj
+T*
+(So if RSP is pivoted into our buffer, we control the return target.) Tj
+T*
+() Tj
+T*
+(### Steps) Tj
+T*
+(1. Place a fake stack frame at the start of buf:) Tj
+T*
+(   - fake RBP \(8 bytes\)) Tj
+T*
+(   - fake RIP \(8 bytes\) set to win\(\)) Tj
+T*
+(2. Send 129 bytes so the final byte overwrites the LSB of saved RBP and points it into buf.) Tj
+T*
+(3. Let the function return; execution reaches win\(\).) Tj
+T*
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 2588 >>
+stream
+BT
+/F1 10 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(## Reproduction) Tj
+T*
+(This challenge is intended for Linux \(or WSL\).) Tj
+T*
+(1. Build: make -C challenges/pwn-off-by-one-rop/) Tj
+T*
+(2. Run the exploit: python exploits/exploit_off_by_one.py) Tj
+T*
+() Tj
+T*
+(## Flag) Tj
+T*
+(flag{off_by_one_stack_pivot}) Tj
+T*
+() Tj
+T*
+(## Mitigation) Tj
+T*
+(- Use correct bounds \(read\(..., sizeof\(buf\)\)\) and always check return values.) Tj
+T*
+(- Keep hardening on \(PIE, RELRO, stack protector\) in real applications; it raises the bar) Tj
+T*
+(substantially.) Tj
+T*
+() Tj
+T*
+(---) Tj
+T*
+(Ethics note: this writeup targets the intentionally vulnerable code in this repository only. Do) Tj
+T*
+(not use these techniques on systems you do not own or have explicit permission to test.) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(==============================================================================) Tj
+T*
+(pwn-stack-canary-slip.md) Tj
+T*
+(==============================================================================) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(# Pwn: Stack Canary Slip) Tj
+T*
+() Tj
+T*
+(## Summary) Tj
+T*
+(Leak a stack canary via a format string bug, then reuse it to bypass stack protector and) Tj
+T*
+(redirect execution to win\(\).) Tj
+T*
+() Tj
+T*
+(## Challenge) Tj
+T*
+(- Vulnerabilities \(in vuln\(\)\):) Tj
+T*
+(  - printf\(buf\) format string \(stack leak\)) Tj
+T*
+(  - gets\(buf\) buffer overflow) Tj
+T*
+(- Mitigation present: stack canary \(-fstack-protector\)) Tj
+T*
+(- Win condition: call win\(\) which prints flag{canary_leak_then_smash} and exits.) Tj
+T*
+() Tj
+T*
+(## Solution) Tj
+T*
+(### High level) Tj
+T*
+(1. Use the format string to leak the canary value from the stack.) Tj
+T*
+(2. Overflow the buffer again, but include the exact canary bytes so the check passes.) Tj
+T*
+(3. Overwrite the saved return address with the address of win\(\).) Tj
+T*
+() Tj
+T*
+(### Notes on offsets) Tj
+T*
+(The correct %n$p offset for the canary is environment- and build-dependent. The intended) Tj
+T*
+(workflow is to fuzz offsets until you see a value that ends with 00 \(canaries typically have a) Tj
+T*
+(null least significant byte\).) Tj
+T*
+() Tj
+T*
+(## Reproduction) Tj
+T*
+(This challenge is intended for Linux \(or WSL\).) Tj
+T*
+(1. Build: make -C challenges/pwn-stack-canary/) Tj
+T*
+(2. Run the exploit: python exploits/exploit_stack_canary.py) Tj
+T*
+() Tj
+T*
+(## Flag) Tj
+T*
+(flag{canary_leak_then_smash}) Tj
+T*
+() Tj
+T*
+(## Mitigation) Tj
+T*
+(- Never pass user input as a format string: use printf\("%s", buf\).) Tj
+T*
+(- Avoid unsafe input APIs like gets\(\): use fgets\(\) with bounds.) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 2394 >>
+stream
+BT
+/F1 10 Tf
+50 792 Td
+12 TL
+(---) Tj
+T*
+(Ethics note: this writeup targets the intentionally vulnerable code in this repository only. Do) Tj
+T*
+(not use these techniques on systems you do not own or have explicit permission to test.) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(==============================================================================) Tj
+T*
+(rev-flag-check.md) Tj
+T*
+(==============================================================================) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(# Reversing: Flag Check) Tj
+T*
+() Tj
+T*
+(## Summary) Tj
+T*
+(Recover the expected flag by reversing a simple XOR-based check that compares input bytes) Tj
+T*
+(against static arrays.) Tj
+T*
+() Tj
+T*
+(## Challenge) Tj
+T*
+(The checker validates:) Tj
+T*
+(ord\(flag[i]\) XOR KEY[i] == TARGET[i]) Tj
+T*
+() Tj
+T*
+(Both KEY and TARGET are static, so the flag can be derived offline:) Tj
+T*
+(flag[i] = KEY[i] XOR TARGET[i]) Tj
+T*
+() Tj
+T*
+(## Solution) Tj
+T*
+(### Steps) Tj
+T*
+(1. Extract KEY and TARGET from the binary \(or, in this repo, from flag_check.py\).) Tj
+T*
+(2. Compute each flag byte as KEY[i] XOR TARGET[i].) Tj
+T*
+(3. Print the reconstructed string.) Tj
+T*
+() Tj
+T*
+(## Reproduction) Tj
+T*
+(1. Run the solver: python exploits/solve_flag_check.py) Tj
+T*
+(2. \(Optional\) Verify: python challenges/rev-flag-check/flag_check.py and paste the output.) Tj
+T*
+() Tj
+T*
+(## Flag) Tj
+T*
+(flag{xor_is_not_crypto}) Tj
+T*
+() Tj
+T*
+(## Mitigation) Tj
+T*
+(- Do not embed secrets in client-side binaries if the attacker controls execution.) Tj
+T*
+(- Move validation and secrets server-side, or use a design that remains secure under reverse) Tj
+T*
+(engineering.) Tj
+T*
+() Tj
+T*
+(---) Tj
+T*
+(Ethics note: this writeup targets the intentionally vulnerable code in this repository only. Do) Tj
+T*
+(not use these techniques on systems you do not own or have explicit permission to test.) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(==============================================================================) Tj
+T*
+(web-cookie-smith.md) Tj
+T*
+(==============================================================================) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(# Web: Cookie Smith) Tj
+T*
+() Tj
+T*
+(## Summary) Tj
+T*
+(Forge the auth cookie by abusing a SHA-1 length extension weakness in a naive "secret-prefix") Tj
+T*
+(signature.) Tj
+T*
+() Tj
+T*
+(## Challenge) Tj
+T*
+(- Endpoint: GET /profile?user=guest sets auth=<base64\(...\)>) Tj
+T*
+ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 13 0 R >>
+endobj
+13 0 obj
+<< /Length 2668 >>
+stream
+BT
+/F1 10 Tf
+50 792 Td
+12 TL
+(- Cookie format \(decoded\): user|role|sha1\(SECRET || "user|role"\)) Tj
+T*
+(- Protected page: GET /admin returns the flag if admin is present in the parsed fields.) Tj
+T*
+() Tj
+T*
+(## Solution) Tj
+T*
+(The server signs SHA1\(SECRET || message\). Because SHA-1 is Merkle-Damgard, knowing the hash of) Tj
+T*
+(an unknown-prefix message allows computing the hash of:) Tj
+T*
+() Tj
+T*
+(SECRET || message || glue_padding || extra) Tj
+T*
+() Tj
+T*
+(without knowing SECRET.) Tj
+T*
+() Tj
+T*
+(### Steps) Tj
+T*
+(1. Fetch a valid cookie via GET /profile.) Tj
+T*
+(2. Base64-decode to split message and sig.) Tj
+T*
+(3. Perform SHA-1 length extension to append |admin to the message.) Tj
+T*
+(4. Re-encode the forged cookie and request GET /admin with it.) Tj
+T*
+() Tj
+T*
+(## Reproduction) Tj
+T*
+(1. Run the challenge \(Python + Flask\): python challenges/web-cookie-smith/app.py \(listens on) Tj
+T*
+(http://localhost:5001\).) Tj
+T*
+(2. Run the exploit: python exploits/exploit_cookie_smith.py.) Tj
+T*
+() Tj
+T*
+(## Flag) Tj
+T*
+(flag{length_extension_broke_auth}) Tj
+T*
+() Tj
+T*
+(## Mitigation) Tj
+T*
+(- Replace secret-prefix hashing with an HMAC: HMAC-SHA256\(secret, message\).) Tj
+T*
+(- Do not store authorization decisions \(like role\) in client-controlled data unless it is) Tj
+T*
+(strongly authenticated and validated.) Tj
+T*
+() Tj
+T*
+(---) Tj
+T*
+(Ethics note: this writeup targets the intentionally vulnerable code in this repository only. Do) Tj
+T*
+(not use these techniques on systems you do not own or have explicit permission to test.) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(==============================================================================) Tj
+T*
+(web-sqli-search.md) Tj
+T*
+(==============================================================================) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(# Web: SQLi in Search) Tj
+T*
+() Tj
+T*
+(## Summary) Tj
+T*
+(Exploit a UNION-based SQL injection in a SQLite-backed search endpoint to read the flags table.) Tj
+T*
+() Tj
+T*
+(## Challenge) Tj
+T*
+(- Endpoint: GET /search?q=<input>) Tj
+T*
+(- Vulnerable query shape:) Tj
+T*
+(      SELECT title FROM posts WHERE title LIKE '%<q>%') Tj
+T*
+(- App also echoes SQLite exceptions to the client \(useful for discovery\).) Tj
+T*
+() Tj
+T*
+(## Solution) Tj
+T*
+(Because q is interpolated into SQL without parameters, we can terminate the string and append a) Tj
+T*
+(UNION SELECT that returns the flag.) Tj
+T*
+() Tj
+T*
+(### Steps) Tj
+T*
+(1. Confirm injection: q=' OR 1=1 -- should return all posts.) Tj
+T*
+(2. Because the original query selects 1 column \(title\), use a 1-column UNION payload.) Tj
+T*
+(3. Extract flag: q=' UNION SELECT flag FROM flags --) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 15 0 R >>
+endobj
+15 0 obj
+<< /Length 740 >>
+stream
+BT
+/F1 10 Tf
+50 792 Td
+12 TL
+(## Reproduction) Tj
+T*
+(1. Run the challenge: python challenges/web-sqli-search/app.py \(listens on) Tj
+T*
+(http://localhost:5002\).) Tj
+T*
+(2. Run the exploit: python exploits/exploit_sqli_search.py.) Tj
+T*
+() Tj
+T*
+(## Flag) Tj
+T*
+(flag{union_select_ftw}) Tj
+T*
+() Tj
+T*
+(## Mitigation) Tj
+T*
+(- Use parameterized queries \(prepared statements\), including for LIKE patterns.) Tj
+T*
+(- Do not return raw DB exceptions to users; log them server-side.) Tj
+T*
+() Tj
+T*
+(---) Tj
+T*
+(Ethics note: this writeup targets the intentionally vulnerable code in this repository only. Do) Tj
+T*
+(not use these techniques on systems you do not own or have explicit permission to test.) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000011 00000 n 
+0000000060 00000 n 
+0000000150 00000 n 
+0000000218 00000 n 
+0000000344 00000 n 
+0000002774 00000 n 
+0000002900 00000 n 
+0000005594 00000 n 
+0000005720 00000 n 
+0000008359 00000 n 
+0000008487 00000 n 
+0000010933 00000 n 
+0000011061 00000 n 
+0000013781 00000 n 
+0000013909 00000 n 
+trailer
+<< /Size 16 /Root 1 0 R >>
+startxref
+14700
+%%EOF
